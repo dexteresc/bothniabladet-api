@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  JoinTable
+} from "typeorm";
 import { Photo } from "./Photo";
 
 @Entity()
@@ -15,6 +21,7 @@ export class User {
   @Column()
   email: string;
 
-  @OneToMany((type) => Photo, (photo) => photo.user)
+  @OneToMany(() => Photo, (photo) => photo.user)
+  @JoinTable()
   photos: Photo[];
 }
