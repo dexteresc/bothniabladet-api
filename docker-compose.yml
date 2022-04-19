@@ -1,0 +1,18 @@
+version: "3"
+
+services:
+  server:
+    build: .
+    volumes:
+      - ./:/app
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    links:
+      - db
+    command: ["npm", "start"]
+  database:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
