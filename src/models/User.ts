@@ -21,6 +21,9 @@ export class User {
   @Column()
   email: string;
 
+  @Column()
+  password: string;
+
   @OneToMany(() => Photo, (photo) => photo.user)
   @JoinTable()
   photos: Photo[];

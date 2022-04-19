@@ -1,8 +1,6 @@
 import * as cors from "cors";
 import * as express from "express";
-import * as cookieParser from "cookie-parser";
 import * as passport from "passport";
-import { serve, setup } from "swagger-ui-express";
 import * as path from "path";
 import router from "./routes/v1";
 
@@ -39,7 +37,6 @@ app.use(
 
 // Host images
 const dir = path.join(__dirname, "../uploads");
-console.log(dir);
 app.use(
   "/uploads",
   express.static(dir, {
@@ -47,23 +44,12 @@ app.use(
   })
 );
 
-app.use(cookieParser(process.env.COOKIE_SECRET));
-app.use("/api/v1/", router); // Routes
-
-// TODO - add swagger-jsdoc
-app.use(
-  "/docs",
-  serve,
-  setup(undefined, {
-    swaggerOptions: {
-      url: "/swagger.json"
-    }
-  })
-);
-
-app.all("*", (req, res) => {
-  res.statusCode = 404;
-  res.json({ status: "success", message: "404", success: false });
+// Download image
+app.get("/uploads/:id/download", (req, res) => {
+  const file = path.join(dir, req.params.id);
+  res.download(file);
 });
+
+app.use("/api/v1/", router); // Routes
 
 export { app };
