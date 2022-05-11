@@ -26,6 +26,8 @@ categoryRouter.get("/:id", async (req, res) => {
 categoryRouter.post("", async (req, res) => {
   const category = new Category();
   category.name = req.body.name;
+  category.type = req.body.type;
+  category.parentId = req.body.parentId;
   await AppDataSource.manager.save(category);
   res.send(category);
 });
@@ -43,6 +45,9 @@ categoryRouter.put("/:id", async (req, res) => {
     return;
   }
   category.name = req.body.name;
+  category.type = req.body.type;
+  category.parentId = req.body.parentId;
+  
   await AppDataSource.manager.save(category);
   res.send(category);
 });
