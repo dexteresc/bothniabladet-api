@@ -10,7 +10,7 @@ function loggerMiddleware(
   next: express.NextFunction
 ) {
   // eslint-disable-next-line no-console
-  console.log(`${request.method} ${request.path}`);
+  console.log(`${request.method} ${request.path} - ${response.status}`);
   next();
 }
 const app = express();
