@@ -47,7 +47,7 @@ categoryRouter.put("/:id", async (req, res) => {
   category.name = req.body.name;
   category.type = req.body.type;
   category.parentId = req.body.parentId;
-  
+
   await AppDataSource.manager.save(category);
   res.send(category);
 });
@@ -74,6 +74,25 @@ categoryRouter.delete("/:id", async (req, res) => {
   }
   await AppDataSource.manager.remove(category);
   res.send(category);
+});
+
+// Get photos for a category
+categoryRouter.get("/:id/photos", async (req, res) => {
+  // try to convert the id to a number
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) {
+    res.status(400).send("Id must be a number");
+    return;
+  }
+  const category = await AppDataSource.manager.findOneBy(Category, { id });
+  if (!category) {
+    res.status(404).send("Category not found");
+    return;
+  }
+  const photos = await AppDataSource.manager.find(Photo, {
+    where: { categories: { id } }
+  });
+  res.send(photos);
 });
 
 export default categoryRouter;
