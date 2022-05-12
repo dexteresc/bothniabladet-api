@@ -1,5 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import {
+  BaseEntity,
   Column,
   CreateDateColumn,
   Entity,
@@ -15,7 +16,7 @@ import { User } from "./User";
 
 @Entity()
 @Index(["title", "description"], { fulltext: true })
-export class Photo {
+export class Photo extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
