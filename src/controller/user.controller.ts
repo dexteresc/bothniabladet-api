@@ -1,4 +1,6 @@
 // User controller
+
+import { pbkdf2 } from "crypto";
 import { User } from "../models";
 import { AppDataSource } from "../data-source";
 
@@ -7,8 +9,8 @@ import { AppDataSource } from "../data-source";
  * @param email The email of the user
  * @returns The user with the given email
  */
-function getUserByEmail(email: string): Promise<User> {
-  return AppDataSource.manager.findOne(User, { where: { email } });
+export function getUserByEmail(email: string): Promise<User> {
+  return User.findOneBy({ email });
 }
 
 /**
@@ -16,7 +18,7 @@ function getUserByEmail(email: string): Promise<User> {
  * @param id The id of the user
  * @returns The user with the given id
  */
-function getUserById(id: number): Promise<User> {
+export function getUserById(id: number): Promise<User> {
   return AppDataSource.manager.findOne(User, { where: { id } });
 }
 
@@ -27,15 +29,51 @@ function getUserById(id: number): Promise<User> {
  * @returns The created user
  * @throws An error if the user already exists
  */
-function createUser(email: string, password: string): Promise<User> {
-  return AppDataSource.manager
-    .findOne(User, { where: { email } })
-    .then((user) => {
-      if (user) {
-        throw new Error("User already exists");
-      }
-      return AppDataSource.manager.save(User, { email, password });
-    });
+export async function createUser(
+  email: string,
+  password: string
+): Promise<User> {
+  // Check if user already exists
+  if (await getUserByEmail(email)) {
+    throw new Error("User already exists");
+  }
+  // Create user
+  const user = new User();
+  user.email = email;
+  user.password = password;
+  return AppDataSource.manager.save(user);
 }
 
-export { getUserByEmail, getUserById, createUser };
+export const userSignUp = async (email: string, password: string) => {
+  const user = await getUserByEmail(email);
+  if (user) {
+    throw new Error("User already exists");
+  }
+  if (!user) {
+    // Signup dags
+    pbkdf2(password, "salt", 100000, 64, "sha512", async (err, derivedKey) => {
+      if (err) {
+        throw err;
+      }
+      await createUser(email, derivedKey.toString("hex"));
+    });
+  }
+  return false;
+};
+
+export const userSignIn = async (email: string, password: string) => {
+  const user = await getUserByEmail(email);
+  if (!user) {
+    throw new Error("User not found");
+  }
+  pbkdf2(password, "salt", 100000, 64, "sha512", async (err, derivedKey) => {
+    if (err) {
+      throw err;
+    }
+    if (derivedKey.toString("hex") === user.password) {
+      return user;
+    }
+    throw new Error("Invalid password");
+  });
+  return false;
+};

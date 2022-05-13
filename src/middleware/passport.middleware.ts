@@ -1,55 +1,64 @@
+import { Strategy, ExtractJwt, StrategyOptions } from "passport-jwt";
 import { PassportStatic } from "passport";
-import { Strategy } from "passport-local";
-import { createUser, getUserByEmail } from "../controller/User.controller";
+import { pbkdf2 } from "crypto";
+import { getUserByEmail, createUser } from "../controller/user.controller";
+import { User } from "../models/User";
 
-// Sign up
-export const signup = async (passport: PassportStatic) => {
+
+function initialize(passport: PassportStatic) {
+  const opts: StrategyOptions = {
+    jwtFromRequest: ExtractJwt.fromAuthHeader(),
+    secretOrKey: 'ligma-secret'
+  };
   passport.use(
-    "signup",
-    new Strategy(
-      {
-        usernameField: "email",
-        passwordField: "password"
-      },
-      async (email, password, done) => {
-        try {
-          const user = await getUserByEmail(email);
+    new Strategy(opts, (jwtPayload, done) => {
+      // Verify that id is a number
+      if (typeof jwtPayload.id !== "number") {
+        return done(null, false);
+      }
+
+      User.findOne({ where: { id: jwtPayload.id } })
+        .then((user) => {
           if (user) {
-            return done(null, false, { message: "User already exists" });
+            return done(null, user);
           }
-          const newUser = await createUser(email, password);
-          return done(null, newUser);
-        } catch (error) {
-          return done(error);
-        }
+          return done(null, false);
+        })
+        .catch((err) => done(err, false));
+        return false
       }
-    )
-  );
+    ));
+}
+
+export const signUp = (email: string, password: string) => {
+  const user = getUserByEmail(email);
+  if (user) {
+    throw new Error("User already exists");
+  }
+  if (!user) { // Signup dags
+    pbkdf2(password, 'salt', 100000, 64, 'sha512', async (err, derivedKey) => {
+      if (err) {
+        throw err;
+      }
+      await createUser(email, derivedKey.toString('hex'));
+    });
+  }
+  return false
 };
 
-// Login
-export const login = async (passport: PassportStatic) => {
-  passport.use(
-    "login",
-    new Strategy(
-      {
-        usernameField: "email",
-        passwordField: "password"
-      },
-      async (email, password, done) => {
-        try {
-          const user = await getUserByEmail(email);
-          if (!user) {
-            return done(null, false, { message: "User does not exist" });
-          }
-          if (user.password !== password) {
-            return done(null, false, { message: "Incorrect password" });
-          }
-          return done(null, user, { message: "Logged in successfully" });
-        } catch (error) {
-          return done(error);
-        }
-      }
-    )
-  );
-};
+export const logIn = async (email: string, password: string) => {
+  const user = await getUserByEmail(email);
+  if (!user) {
+    throw new Error("User not found");
+  }
+  pbkdf2(password, 'salt', 100000, 64, 'sha512', async (err, derivedKey) => {
+    if (err) {
+      throw err;
+    }
+    if (derivedKey.toString('hex') === user.password) {
+      return user;
+    }
+    throw new Error("Invalid password");
+  });
+  return null;
+}
