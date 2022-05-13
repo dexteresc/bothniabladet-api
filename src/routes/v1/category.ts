@@ -6,7 +6,14 @@ const categoryRouter = Router();
 
 // fetch all categories from the database
 categoryRouter.get("/", async (req, res) => {
-  const categories = await AppDataSource.manager.find(Category);
+  // Return all categories, sort by parentId, then by type (1 = folder, 2 = category), then by name
+  const categories = await Category.find({
+    order: {
+      parentId: "ASC",
+      type: "DESC",
+      name: "ASC"
+    }
+  });
   res.send(categories);
 });
 
