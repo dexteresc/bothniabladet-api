@@ -1,7 +1,8 @@
-import * as cors from "cors";
-import * as express from "express";
-import * as passport from "passport";
-import * as path from "path";
+import cors = require("cors");
+import express = require("express");
+import passport = require("passport");
+import path = require("path");
+import passportMiddleware from "./middleware/passport.middleware";
 import router from "./routes/v1";
 
 function loggerMiddleware(
@@ -15,9 +16,11 @@ function loggerMiddleware(
 }
 const app = express();
 
-app.use(passport.initialize());
 app.use(express.json({ limit: "10mb" })); // for parsing application/json
 app.use(loggerMiddleware); // Logger
+passportMiddleware(passport);
+app.use(passport.initialize());
+
 // CORS
 const whitelist = process.env.WHITELISTED_DOMAINS
   ? process.env.WHITELISTED_DOMAINS.split(",")
