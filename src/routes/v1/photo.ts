@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { unlink } from "fs";
-import * as multer from "multer";
+import multer = require("multer");
 import { AppDataSource } from "../../data-source";
 import { Photo, User } from "../../models";
 
