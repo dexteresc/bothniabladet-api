@@ -1,32 +1,75 @@
 import { Router } from "express";
+import { sign } from "jsonwebtoken";
+import passport = require("passport");
+import { validPassword } from "../../config/utils";
+import { createUser, getUserByEmail } from "../../controller/user.controller";
 import { User } from "../../models";
-import { userSignUp } from "../../controller/user.controller";
-import { logIn } from "../../middleware/passport.middleware";
 
 const authRouter = Router();
 // create a new user
 
 authRouter.post("/signup", async (req, res) => {
-  const user = new User();
-
-  user.email = req.body.email;
-  user.password = req.body.password;
-
+  const { email, password } = req.body;
+  if (!email || !password) {
+    res.status(400).send("Missing email or password");
+    return;
+  }
   try {
-    await userSignUp(user.email, user.password);
-    res.send(user);
+    const user = await getUserByEmail(email);
+    if (user) {
+      res.status(400).send("User already exists");
+      return;
+    }
+    if (!user) {
+      await createUser(email, password);
+    }
+    res.status(201).send("User created");
   } catch (err) {
+    console.log(err);
     res.status(500).send(err);
   }
 });
 
 authRouter.post("/login", async (req, res) => {
-  const user = await logIn(req.body.email, req.body.password);
-  if (user) {
-    res.send(user);
-  } else {
-    res.status(500).send("Invalid email or password");
+  const { email, password } = req.body;
+  if (!email || !password) {
+    res.status(400).send("Please enter email and password");
+    return;
+  }
+  try {
+    console.log(email, password);
+    const user = await getUserByEmail(email);
+    if (!user) {
+      res.status(404).send("User not found");
+      return;
+    }
+    const { hash, salt, ...resUser } = user;
+    if (validPassword(password, hash, salt)) {
+      const token = sign({ user }, process.env.JWT_SECRET);
+      res.status(200).send({ token, user: resUser });
+    } else {
+      res.status(401).send("Invalid password");
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
   }
 });
+
+// Validate token and return user
+authRouter.get(
+  "/validate",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    if (req.user) {
+      // Send back all user details except password
+      const { hash, salt, ...user } = req.user as User;
+      res.status(200).send(user);
+      return;
+    }
+    res.status(401).send("Invalid token");
+    console.log("Invalid token");
+  }
+);
 
 export default authRouter;
