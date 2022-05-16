@@ -1,18 +1,13 @@
 import { Router } from "express";
 import { unlink } from "fs";
 import multer = require("multer");
+import { join } from "path";
 import { In } from "typeorm";
 import { AppDataSource } from "../../data-source";
 import { Category, Photo, User } from "../../models";
+import storage from "../../middleware/multer.middleware";
+import { dir } from "../../app";
 
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, "uploads/");
-  },
-  filename(req, file, cb) {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  }
-});
 const upload = multer({ storage });
 const photoRouter = Router();
 
@@ -90,37 +85,6 @@ photoRouter.post("", upload.single("file"), async (req, res) => {
   res.send(photo);
 });
 
-// update a photo
-photoRouter.put("/:id", async (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  if (Number.isNaN(id)) {
-    res.status(400).send("Id must be a number");
-    return;
-  }
-  const photo = await AppDataSource.manager.findOneBy(Photo, { id });
-  if (!photo) {
-    res.status(404).send("Photo not found");
-    return;
-  }
-  photo.title = req.body.title;
-  photo.url = req.body.url;
-  // Get user
-  const userId = parseInt(req.body.userId, 10);
-  if (Number.isNaN(userId)) {
-    res.status(400).send("UserId must be a number");
-    return;
-  }
-  const user = await AppDataSource.manager.findOneBy(User, { id: userId });
-  if (!user) {
-    res.status(404).send("User not found");
-    return;
-  }
-  photo.user = user;
-
-  await AppDataSource.manager.save(photo);
-  res.send(photo);
-});
-
 // delete a photo
 photoRouter.delete("/:id", async (req, res) => {
   const id = parseInt(req.params.id, 10);
@@ -128,25 +92,23 @@ photoRouter.delete("/:id", async (req, res) => {
     res.status(400).send("Id must be a number");
     return;
   }
-  const photo = await AppDataSource.manager.findOneBy(Photo, { id });
+  const photo = await AppDataSource.manager.findOneBy(Photo, { id }); // find the photo
   if (!photo) {
     res.status(404).send("Photo not found");
     return;
   }
 
-  // Delete file
-  const { url } = photo;
+  const url = join(dir, "../", photo.url); // get the full path to the file
 
   // Remove file from the file system
-  unlink(url, (err) => {
+  unlink(url, async (err) => {
     if (err) {
-      // eslint-disable-next-line no-console
-      console.log(err);
+      res.status(500).send("Error deleting file");
+      return;
     }
+    await AppDataSource.manager.remove(photo); // delete the photo from the database
+    res.send(photo);
   });
-
-  await AppDataSource.manager.remove(photo);
-  res.send(photo);
 });
 
 export default photoRouter;
