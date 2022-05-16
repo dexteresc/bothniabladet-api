@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { unlink } from "fs";
 import multer = require("multer");
+import { In } from "typeorm";
 import { AppDataSource } from "../../data-source";
-import { Photo, User } from "../../models";
+import { Category, Photo, User } from "../../models";
 
 const storage = multer.diskStorage({
   destination(req, file, cb) {
@@ -69,12 +70,21 @@ photoRouter.get("/:id", async (req, res) => {
 
 // create a new photo
 photoRouter.post("", upload.single("file"), async (req, res) => {
-  // Get path to file
+  const { title, description, categories, userId } = req.body;
   const { filename } = req.file;
   const photo = new Photo();
-  photo.title = req.body.title;
-  photo.description = req.body.description;
+  photo.title = title;
+  photo.description = description;
   photo.url = `/uploads/${filename}`;
+  photo.user = await User.findOneBy({ id: userId });
+  // Find categories and add them to the photo using in operator
+  if (categories) {
+    // Turn string "[1,2,3,4]" into array
+    const categoryIds = JSON.parse(categories);
+    if (categoryIds.length > 0) {
+      photo.categories = await Category.findBy({ id: In(categoryIds) });
+    }
+  }
 
   await AppDataSource.manager.save(photo);
   res.send(photo);
