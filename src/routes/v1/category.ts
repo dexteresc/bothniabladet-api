@@ -72,34 +72,35 @@ categoryRouter.delete("/:id", async (req, res) => {
     res.status(404).send("Category not found");
     return;
   }
-  const photos = await AppDataSource.manager.find(Photo, {
-    where: { categories: { id } }
+
+  // Find and remove all subcategories
+  const subcategories = await AppDataSource.manager.find(Category, {
+    where: { parentId: id }
   });
-  if (photos.length > 0) {
-    res.status(400).send("Category has photos associated with it");
-    return;
-  }
-  await AppDataSource.manager.remove(category);
+
+  AppDataSource.manager.remove([category, ...subcategories]);
+
   res.send(category);
 });
 
 // Get photos for a category
 categoryRouter.get("/:id/photos", async (req, res) => {
-  // try to convert the id to a number
   const id = parseInt(req.params.id, 10);
   if (Number.isNaN(id)) {
     res.status(400).send("Id must be a number");
     return;
   }
-  const category = await AppDataSource.manager.findOneBy(Category, { id });
+  const category = await Category.findOne({ where: { id } });
   if (!category) {
     res.status(404).send("Category not found");
     return;
   }
+
   const photos = await AppDataSource.manager.find(Photo, {
     where: { categories: { id } }
   });
-  res.send(photos);
+
+  res.status(200).send(photos);
 });
 
 export default categoryRouter;
