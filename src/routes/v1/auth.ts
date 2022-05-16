@@ -25,7 +25,6 @@ authRouter.post("/signup", async (req, res) => {
     }
     res.status(201).send("User created");
   } catch (err) {
-    console.log(err);
     res.status(500).send(err);
   }
 });
@@ -37,7 +36,6 @@ authRouter.post("/login", async (req, res) => {
     return;
   }
   try {
-    console.log(email, password);
     const user = await getUserByEmail(email);
     if (!user) {
       res.status(404).send("User not found");
@@ -51,7 +49,6 @@ authRouter.post("/login", async (req, res) => {
       res.status(401).send("Invalid password");
     }
   } catch (err) {
-    console.log(err);
     res.status(500).send(err);
   }
 });
@@ -68,7 +65,6 @@ authRouter.get(
       return;
     }
     res.status(401).send("Invalid token");
-    console.log("Invalid token");
   }
 );
 
