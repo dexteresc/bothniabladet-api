@@ -9,7 +9,7 @@ const config: DataSourceOptions = {
   password: process.env.DB_PD,
   database: "bothniabladet",
   synchronize: true,
-  logging: false,
+  logging: ["error"],
   entities: [User, Photo, Category],
   migrations: [],
   subscribers: []
