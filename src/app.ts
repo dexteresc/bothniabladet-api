@@ -1,5 +1,6 @@
 import cors = require("cors");
 import express = require("express");
+import { existsSync, mkdirSync } from "fs";
 import passport = require("passport");
 import path = require("path");
 import passportMiddleware from "./middleware/passport.middleware";
@@ -39,17 +40,26 @@ app.use(
 );
 
 // Host images
-const dir = path.join(__dirname, "../uploads");
+export const dir = path.join(__dirname, "../uploads");
+// Check if dir exists
+if (!existsSync(dir)) {
+  // Create dir
+  mkdirSync(dir);
+  console.log("Created uploads directory"); // eslint-disable-line no-console
+}
+
 app.use(
   "/uploads",
   express.static(dir, {
-    maxAge: "1y"
+    maxAge: "1m",
+    immutable: true
   })
 );
 
 // Download image
-app.get("/uploads/:id/download", (req, res) => {
-  const file = path.join(dir, req.params.id);
+app.get("/uploads/:name/download", (req, res) => {
+  const { name } = req.params;
+  const file = path.join(dir, name);
   res.download(file);
 });
 
