@@ -65,13 +65,15 @@ photoRouter.get("/:id", async (req, res) => {
 
 // create a new photo
 photoRouter.post("", upload.single("file"), async (req, res) => {
-  const { title, description, categories, userId } = req.body;
+  const { title, description, categories, userId, owned, useCount } = req.body;
   const { filename } = req.file;
   const photo = new Photo();
   photo.title = title;
   photo.description = description;
   photo.url = `/uploads/${filename}`;
   photo.user = await User.findOneBy({ id: userId });
+  photo.owned = owned;
+  photo.useCount = useCount;
   // Find categories and add them to the photo using in operator
   if (categories) {
     // Turn string "[1,2,3,4]" into array

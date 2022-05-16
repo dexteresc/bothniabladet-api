@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 import {
   BaseEntity,
   Column,
@@ -29,16 +28,22 @@ export class Photo extends BaseEntity {
   @Column()
   description: string;
 
-  @CreateDateColumn()
-  createdDate: Date;
-
-  @UpdateDateColumn()
-  updatedDate: Date;
-
   @ManyToOne(() => User, (user) => user.photos)
   user: User | undefined;
 
   @ManyToMany(() => Category, (category) => category.photos)
   @JoinTable()
   categories: Category[];
+
+  @Column({ nullable: true })
+  useCount: number; // Column to store the amount of time the photo can be downloaded
+
+  @Column({ default: false })
+  owned: boolean;
+
+  @CreateDateColumn()
+  createdDate: Date;
+
+  @UpdateDateColumn()
+  updatedDate: Date;
 }
