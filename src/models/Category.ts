@@ -3,8 +3,10 @@ import {
   Column,
   Entity,
   Index,
+  ManyToMany,
   PrimaryGeneratedColumn
 } from "typeorm";
+import { Photo } from "./Photo";
 
 @Entity()
 export class Category extends BaseEntity {
@@ -22,4 +24,7 @@ export class Category extends BaseEntity {
 
   @Column({ nullable: true })
   parentId: number;
+
+  @ManyToMany(() => Photo, (photo) => photo.categories)
+  photos: Photo[];
 }

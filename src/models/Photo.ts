@@ -38,7 +38,7 @@ export class Photo extends BaseEntity {
   @ManyToOne(() => User, (user) => user.photos)
   user: User | undefined;
 
-  @ManyToMany(() => Category)
+  @ManyToMany(() => Category, (category) => category.photos)
   @JoinTable()
   categories: Category[];
 }
