@@ -109,6 +109,8 @@ photoRouter.delete("/:id", async (req, res) => {
       return;
     }
     await AppDataSource.manager.remove(photo); // delete the photo from the database
+    // delete photo from uploads folder
+    
     res.send(photo);
   });
 });
